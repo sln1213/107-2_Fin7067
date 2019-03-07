@@ -4,7 +4,6 @@
 '''
 
 from datetime import datetime, timedelta
-
 '''
 將預計搜集新聞之時間範圍，以天為單位，放在 dates 的list中
 '''
@@ -22,49 +21,49 @@ while start <= stop:
 
 import requests
 from bs4 import BeautifulSoup as bs
-
 '''
 取得網頁資料·並進行處理，再放入 data 的list中
 '''
 def process_document(document, date):
+    
+    nodes = document.select('ul.list > li')
+    data = list()
 
-	nodes = document.select('ul.list > li')
-	data = list()
+    for li in nodes:
 
-	for li in nodes:
+        # 檢查是否為空元素
+        if li.select_one('a') == None:
+            continue
 
-		# 檢查是否為空元素
-		if li.select_one('a') == None:
-			continue
+        # 取得網頁連結
+        li_link = 'http://news.ltn.com.tw/' + li.select_one('a')['href']
 
-		# 取得新聞連結
-		li_link = 'http://news.ltn.com.tw/' + li.select_one('a')['href']
+        # 把網頁抓下來，並以'lxml'為解析器進行解析
+        li_res = requests.get(li_link)
+        li_doc = bs(li_res.text, 'lxml')
 
-		# 把網頁抓下來，並以'lxml'為解析器進行解析
-		li_res = requests.get(li_link)
-	    li_doc = bs(li_res.text, 'lxml')
+        # 取得日期
+        li_date = datetime.strptime(date, "%Y%m%d").strftime('%Y-%m-%d')
 
-	    # 取得日期
-	    li_date = datetime.strptime(date, "%Y%m%d").strftime('%Y-%m-%d')
+        # 取得新聞標題
+        li_title = li.select_one('p').get_text()
 
-	    #取得新聞標題
-	    li_title = li.select_one('p').get_text()
+        # 取讀新聞內文
+        li_content = ""
+        for ele in li_doc.select('div.text > p'):
+            if not 'appE1121' in ele.get('class', []):
+                li_content += ele.get_text()
 
-	    #取得所需的新聞內文
-	    li_content = ""
-	    for ele in li_doc.select('div.text > p'):
-	        if not 'appE1121' in ele.get('class', []):
-	            li_content += ele.get_text()
+        # 將鐔得的資料放入 data 的list中
+        data.append({
+            'date' : li_date,
+            'title': li_title,
+            'link' : li_link,
+            'content' : li_content,
+            'tags' : []
+        })
+    return data
 
-	    # 將新得的資料放入data list
-	    data.append({
-	        'date' : li_date,
-	        'title': li_title,
-	        'link' : li_link,
-	        'content' : li_content,
-	        'tags' : []
-	    })
-	return data
 
 '''
 開始爬蟲，並將資料放入 all_data 的list中
@@ -78,8 +77,8 @@ for date in dates:
     data = process_document(doc, date)
     all_data += data
 
-import pickle
 
+import pickle
 '''
 將 all_data 存成PKL檔
 '''
@@ -88,7 +87,6 @@ with open('data/liberty_times.pkl', 'wb') as f:
 
 
 import pandas as pd
-
 '''
 將 all_data 轉成 Pandas 中 DataFrame 的資料結構
 '''
