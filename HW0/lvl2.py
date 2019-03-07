@@ -48,13 +48,13 @@ def process_document(document, date):
         # 取得新聞標題
         li_title = li.select_one('p').get_text()
 
-        # 取讀新聞內文
+        # 取得新聞內文
         li_content = ""
         for ele in li_doc.select('div.text > p'):
             if not 'appE1121' in ele.get('class', []):
                 li_content += ele.get_text()
 
-        # 將鐔得的資料放入 data 的list中
+        # 將新得的資料放入 data 的list中
         data.append({
             'date' : li_date,
             'title': li_title,
